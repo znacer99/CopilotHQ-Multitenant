@@ -1,0 +1,30 @@
+postgres:
+  image: postgres:15
+  container_name: copilot_postgres
+  restart: always
+  environment:
+    POSTGRES_DB: copilotdb
+    POSTGRES_USER: copilot
+    POSTGRES_PASSWORD: copilotpw
+  ports:
+    - "5433:5432"
+  volumes:
+    - ./pgdata:/var/lib/postgresql/data
+
+backend:
+  container_name: copilot_backend
+  build: .
+  command: python manage.py runserver 0.0.0.0:8000
+  volumes:
+    - .:/app
+  ports:
+    - "8000:8000"
+  links:
+    - postgres
+  environment:
+    DJANGO_SETTINGS_MODULE: CopilotHQ.settings.base
+    POSTGRES_DB: copilotdb
+    POSTGRES_USER: copilot
+    POSTGRES_PASSWORD: copilotpw
+    POSTGRES_HOST: postgres
+    POSTGRES_PORT: 5432

@@ -1,3 +1,7 @@
-from django.shortcuts import render
+from django.http import HttpResponse
 
-# Create your views here.
+def public_home(request):
+    return HttpResponse("PUBLIC SCHEMA — OK")
+
+def tenant_home(request):
+    return HttpResponse(f"TENANT SCHEMA — OK")
