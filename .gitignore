@@ -1,0 +1,16 @@
+
+# n8n runtime data (do not commit)
+n8n_data/
+
+# n8n runtime data
+n8n_data/
+
+# runtime / generated (do not commit)
+pgdata/
+ollama_data/
+n8n_data/
+venv/
+venv_new/
+__pycache__/
+*.pyc
+.DS_Store
