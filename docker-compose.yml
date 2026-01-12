@@ -1,30 +1,62 @@
-postgres:
-  image: postgres:15
-  container_name: copilot_postgres
-  restart: always
-  environment:
-    POSTGRES_DB: copilotdb
-    POSTGRES_USER: copilot
-    POSTGRES_PASSWORD: copilotpw
-  ports:
-    - "5433:5432"
-  volumes:
-    - ./pgdata:/var/lib/postgresql/data
+services:
+  postgres:
+    image: postgres:15
+    container_name: copilot_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: copilotdb
+      POSTGRES_USER: copilot
+      POSTGRES_PASSWORD: copilotpw
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
 
-backend:
-  container_name: copilot_backend
-  build: .
-  command: python manage.py runserver 0.0.0.0:8000
-  volumes:
-    - .:/app
-  ports:
-    - "8000:8000"
-  links:
-    - postgres
-  environment:
-    DJANGO_SETTINGS_MODULE: CopilotHQ.settings.base
-    POSTGRES_DB: copilotdb
-    POSTGRES_USER: copilot
-    POSTGRES_PASSWORD: copilotpw
-    POSTGRES_HOST: postgres
-    POSTGRES_PORT: 5432
+  backend:
+    container_name: copilot_backend
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    links:
+      - postgres
+    environment:
+      DJANGO_SETTINGS_MODULE: CopilotHQ.settings.base
+      POSTGRES_DB: copilotdb
+      POSTGRES_USER: copilot
+      POSTGRES_PASSWORD: copilotpw
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
+
+  redis:
+    image: redis:alpine
+    container_name: copilot_redis
+    ports:
+      - "6379:6379"
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: copilot_n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=${WEBHOOK_URL_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - NODE_ENV=production
+      - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678/}
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: copilot_ollama
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama_data:/root/.ollama

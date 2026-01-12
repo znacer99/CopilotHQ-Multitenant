@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent Playground | {{ tenant.name }}</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --accent: #10b981;
+            --danger: #ef4444;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        sidebar {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-border);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+        }
+
+        .nav-item {
+            padding: 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-dim);
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: var(--glass);
+            color: var(--text-main);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: var(--text-main);
+        }
+
+        /* Main Content */
+        main {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        header {
+            margin-bottom: 3rem;
+        }
+
+        header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-dim);
+        }
+
+        .playground-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2rem;
+            height: calc(100vh - 200px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Agent Content Sections */
+        .agent-section {
+            display: none;
+            height: 100%;
+            flex-direction: column;
+        }
+
+        .agent-section.active {
+            display: flex;
+        }
+
+        /* Support Agent (Chat) */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            scrollbar-width: thin;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 1rem 1.5rem;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .message.ai {
+            align-self: flex-start;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 1rem;
+            background: rgba(15, 23, 42, 0.5);
+            padding: 0.75rem;
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+        }
+
+        button.primary-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button.primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Recruiting Section */
+        .recruiting-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            height: 100%;
+        }
+
+        .recruiting-panel {
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 20px;
+            padding: 1.5rem;
+            border: 1px solid var(--glass-border);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .panel-header h3 {
+            font-family: 'Outfit';
+            font-size: 1.25rem;
+        }
+
+        /* Mock Tag */
+        .mock-tag {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .mock-tag::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            background: #f59e0b;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* Loading */
+        .loading-dots span {
+            animation: bounce 0.6s infinite alternate;
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-dim);
+            margin: 0 2px;
+        }
+
+        .loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes bounce {
+            to {
+                transform: translateY(-8px);
+            }
+        }
+
+        /* JSON Display */
+        pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            overflow-x: auto;
+            color: #e2e8f0;
+            max-height: 400px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <sidebar>
+            <div class="logo">CopilotHQ</div>
+            <nav>
+                <div class="nav-item active" onclick="switchAgent('support')">
+                    <span>💬</span> Support Agent
+                </div>
+                <div class="nav-item" onclick="switchAgent('recruiting')">
+                    <span>🔍</span> Recruiting Agent
+                </div>
+                <div class="nav-item" onclick="switchAgent('onboarding')">
+                    <span>📋</span> Onboarding Agent
+                </div>
+                <div class="nav-item" onclick="switchAgent('payroll')">
+                    <span>💰</span> Payroll Agent
+                </div>
+                <div class="nav-item" onclick="switchAgent('knowledge')">
+                    <span>📚</span> Knowledge Agent
+                </div>
+                <div class="nav-item" onclick="switchAgent('analytics')">
+                    <span>📊</span> Analytics Agent
+                </div>
+                <div class="nav-item" onclick="switchAgent('orchestrator')"
+                    style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(99, 102, 241, 0.1)); border: 1px solid var(--accent);">
+                    <span>🧠</span> Master Orchestrator
+                </div>
+                <div class="nav-item" onclick="switchAgent('workflow')">
+                    <span>⚡</span> Workflows
+                </div>
+            </nav>
+
+            <div style="margin-top: auto; padding: 1rem; background: var(--glass); border-radius: 16px;">
+                <div class="mock-tag">MOCK MODE ACTIVE</div>
+                <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 0.5rem;">
+                    Platform is running with simulated AI logic for testing.
+                </p>
+            </div>
+
+            <div style="margin-top: 1rem;">
+                <form action="/auth/logout/" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-item"
+                        style="width: 100%; border: 1px solid var(--glass-border); background: rgba(239, 68, 68, 0.1); color: var(--danger); text-align: left;">
+                        <span>🚪</span> Logout
+                    </button>
+                </form>
+            </div>
+        </sidebar>
+
+        <main>
+            <header>
+                <h1>{{ tenant.name }} Playground</h1>
+                <p>Test your autonomous AI agents safely in a multi-tenant environment.</p>
+            </header>
+
+            <div class="playground-card">
+                <!-- Support Agency UI -->
+                <div id="support-section" class="agent-section active">
+                    <div class="chat-container" id="support-chat">
+                        <div class="message ai">
+                            Hello! I'm your HR Support Agent for {{ tenant.name }}. How can I help you today?
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="support-input" placeholder="Ask about policies, leave balance..."
+                            onkeypress="handleKB(event, 'support')">
+                        <button class="primary-btn" onclick="sendMessage('support')">Send</button>
+                    </div>
+                </div>
+
+                <!-- Recruiting Agent UI -->
+                <div id="recruiting-section" class="agent-section">
+                    <div class="recruiting-grid">
+                        <div class="recruiting-panel">
+                            <div class="panel-header">
+                                <h3>Candidate Sourcing</h3>
+                                <button class="primary-btn" style="padding: 0.5rem 1rem; font-size: 0.8rem;"
+                                    onclick="testSource()">Test Source</button>
+                            </div>
+                            <div id="source-results">
+                                <p style="color: var(--text-dim)">Click to generate AI sourcing strategy for a job
+                                    profile.</p>
+                            </div>
+                        </div>
+                        <div class="recruiting-panel">
+                            <div class="panel-header">
+                                <h3>Resume Screening</h3>
+                                <button class="primary-btn" style="padding: 0.5rem 1rem; font-size: 0.8rem;"
+                                    onclick="testScreen()">Test Screen</button>
+                            </div>
+                            <div id="screen-results">
+                                <p style="color: var(--text-dim)">Click to simulate AI resume scoring and evaluation.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Onboarding Agent UI -->
+                <div id="onboarding-section" class="agent-section">
+                    <div class="recruiting-panel">
+                        <div class="panel-header">
+                            <h3>Onboarding Orchestration</h3>
+                            <button class="primary-btn" onclick="testOnboarding()">Run AI Onboarding Plan</button>
+                        </div>
+                        <div id="onboarding-results">
+                            <p style="color: var(--text-dim)">Click to generate an automated 30-day onboarding journey
+                                for a new hire.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payroll Agent UI -->
+                <div id="payroll-section" class="agent-section">
+                    <div class="recruiting-panel">
+                        <div class="panel-header">
+                            <h3>Payroll & Compensation</h3>
+                            <button class="primary-btn" onclick="testPayroll()">Fetch PTO & Bonus Summary</button>
+                        </div>
+                        <div id="payroll-results">
+                            <p style="color: var(--text-dim)">Click to view active PTO balances and total compensation
+                                insights.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Knowledge Agent UI -->
+                <div id="knowledge-section" class="agent-section">
+                    <div class="recruiting-panel">
+                        <div class="panel-header">
+                            <h3>Semantic Document Search</h3>
+                        </div>
+                        <div class="chat-input-area" style="margin-bottom: 2rem;">
+                            <input type="text" id="knowledge-input"
+                                placeholder="Search policies: 'remote work', 'health benefits'..."
+                                onkeypress="handleKB(event, 'search')">
+                            <button class="primary-btn" onclick="sendMessage('knowledge')">Search</button>
+                        </div>
+                        <div id="knowledge-results">
+                            <p style="color: var(--text-dim)">Enter a query to search across the company's autonomous
+                                knowledge base.</p>
+                        </div>
+
+                        <div style="margin-top: 3rem; border-top: 1px solid var(--glass-border); padding-top: 2rem;">
+                            <h4>Add New Policy / Knowledge</h4>
+                            <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+                                <input type="text" id="kb-title" placeholder="Document Title (e.g., Remote Policy)">
+                                <textarea id="kb-content" placeholder="Paste document content here..."
+                                    style="min-height: 100px; padding: 1rem; border-radius: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white;"></textarea>
+                                <button class="primary-btn" onclick="ingestKnowledge()">Add to Knowledge Base</button>
+                            </div>
+                            <div id="ingest-status" style="margin-top: 1rem; font-size: 0.9rem;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Agent UI -->
+                <div id="analytics-section" class="agent-section">
+                    <div class="recruiting-panel" style="overflow-y: auto;">
+                        <div class="panel-header">
+                            <h3>Workforce Analytics Insights</h3>
+                            <button class="primary-btn" onclick="testAnalytics()">Refresh Dashboard</button>
+                        </div>
+                        <div id="analytics-results">
+                            <p style="color: var(--text-dim)">Click to analyze headcount, turnover, and attrition risks.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Orchestrator Agent UI -->
+                <div id="orchestrator-section" class="agent-section">
+                    <div class="recruiting-panel">
+                        <div class="panel-header">
+                            <h3>Master Agent Orchestration</h3>
+                        </div>
+                        <p style="margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-dim);">
+                            Submit complex, multi-step business objectives. The Orchestrator will analyze your intent
+                            and delegate tasks to specialized agents.
+                        </p>
+                        <div class="chat-input-area" style="margin-bottom: 2rem;">
+                            <input type="text" id="orchestrator-input"
+                                placeholder="e.g., 'Analyze engineering salaries relative to headcount growth'..."
+                                onkeypress="handleKB(event, 'orchestrator')">
+                            <button class="primary-btn" onclick="sendMessage('orchestrator')">Analyze & Execute</button>
+                        </div>
+                        <div id="orchestrator-results">
+                            <p style="color: var(--text-dim)">Ready to coordinate your autonomous workforce.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workflow UI -->
+                <div id="workflow-section" class="agent-section">
+                    <div class="recruiting-panel">
+                        <div class="panel-header">
+                            <h3>Trigger n8n Workflow</h3>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <input type="text" id="webhook-url" placeholder="https://n8n.your-instance.com/webhook/..."
+                                style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px; padding: 1rem;">
+                            <button class="primary-btn" onclick="triggerWorkflow()">Trigger Workflow via Celery</button>
+                            <div id="workflow-status" style="margin-top: 1rem;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function switchAgent(agent) {
+            document.querySelectorAll('.agent-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+
+            document.getElementById(agent + '-section').classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function handleKB(e, agent) {
+            if (e.key === 'Enter') sendMessage(agent);
+        }
+
+        async function sendMessage(agent) {
+            const input = document.getElementById(agent + '-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            if (agent === 'support') {
+                // Add user message to UI
+                addMessage(agent, message, 'user');
+                input.value = '';
+
+                // Add loading state
+                const loadingId = 'loading-' + Date.now();
+                addLoading(agent, loadingId);
+
+                try {
+                    const response = await fetch('/api/agents/support/chat/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken'),
+                        },
+                        body: JSON.stringify({ message: message })
+                    });
+
+                    const data = await response.json();
+                    removeLoading(loadingId);
+
+                    if (data.success) {
+                        addMessage(agent, data.answer, 'ai');
+                    } else {
+                        addMessage(agent, "Error: " + data.error, 'ai');
+                    }
+                } catch (error) {
+                    removeLoading(loadingId);
+                    addMessage(agent, "Connection error. Make sure server is running.", 'ai');
+                }
+            } else if (agent === 'knowledge') {
+                const resArea = document.getElementById('knowledge-results');
+                resArea.innerHTML = '<p>Searching through autonomous knowledge base...</p>';
+                try {
+                    const response = await fetch('/api/agents/knowledge/search/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                        body: JSON.stringify({ query: message })
+                    });
+                    const data = await response.json();
+                    resArea.innerHTML = `
+                        <div style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; border-left: 4px solid var(--accent);">
+                            <p style="font-weight: 500">${data.summary}</p>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            ${data.results.map(r => `
+                                <div style="background: var(--glass); padding: 1.25rem; border-radius: 16px; border: 1px solid var(--glass-border);">
+                                    <h4 style="margin-bottom: 0.5rem; color: var(--primary)">${r.title}</h4>
+                                    <p style="font-size: 0.9rem; color: var(--text-dim)">${r.snippet}</p>
+                                    <div style="font-size: 0.7rem; margin-top: 0.75rem; color: var(--accent); font-weight: 700">RELEVANCE: ${Math.round(r.relevance * 100)}%</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } catch (e) {
+                    resArea.innerHTML = '<p style="color:var(--danger)">Search failed.</p>';
+                }
+            } else if (agent === 'orchestrator') {
+                const resArea = document.getElementById('orchestrator-results');
+                resArea.innerHTML = '<p>Orchestrating autonomous agents... 🧠</p>';
+                try {
+                    const response = await fetch('/api/agents/orchestrator/run/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                        body: JSON.stringify({ query: message })
+                    });
+                    const data = await response.json();
+                    resArea.innerHTML = `
+                         <div style="background: var(--glass); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--glass-border);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <h4 style="color: var(--accent)">INTENT: ${data.intent.toUpperCase()}</h4>
+                                <span class="mock-tag">${data.status || 'Active'}</span>
+                            </div>
+                            
+                            ${data.plan ? `
+                                <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                                    ${data.plan.map(p => `
+                                        <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                                            <div style="width: 24px; height: 24px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;">${p.step}</div>
+                                            <div style="flex: 1;">
+                                                <div style="font-weight: 600; font-size: 0.9rem;">${p.agent} Agent</div>
+                                                <div style="font-size: 0.8rem; color: var(--text-dim)">${p.action}</div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+
+                            ${data.summary ? `
+                                <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 12px; border-left: 4px solid var(--primary);">
+                                    <p style="font-size: 0.9rem;">${data.summary}</p>
+                                </div>
+                            ` : ''}
+
+                            ${data.message ? `<p style="margin-top: 1rem; font-size: 0.9rem;">${data.message}</p>` : ''}
+                         </div>
+                    `;
+                } catch (e) {
+                    resArea.innerHTML = '<p style="color:var(--danger)">Orchestration failed.</p>';
+                }
+            }
+        }
+
+        function addMessage(agent, text, type) {
+            const container = document.getElementById(agent + '-chat');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${type}`;
+            msgDiv.innerText = text;
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addLoading(agent, id) {
+            const container = document.getElementById(agent + '-chat');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message ai';
+            loadingDiv.id = id;
+            loadingDiv.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+            container.appendChild(loadingDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function removeLoading(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        async function testSource() {
+            const resArea = document.getElementById('source-results');
+            resArea.innerHTML = '<p>Generating sourcing strategy...</p>';
+
+            try {
+                const response = await fetch('/api/agents/recruiting/source/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({ job_id: 1 }) // Mock job ID
+                });
+                const data = await response.json();
+                resArea.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (e) {
+                resArea.innerHTML = '<p style="color:var(--danger)">Failed to reach API.</p>';
+            }
+        }
+
+        async function testScreen() {
+            const resArea = document.getElementById('screen-results');
+            resArea.innerHTML = '<p>Evaluating candidate resume...</p>';
+
+            try {
+                const response = await fetch('/api/agents/recruiting/screen/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({ candidate_id: 1, job_id: 1 }) // Mock IDs
+                });
+                const data = await response.json();
+                resArea.innerHTML = `
+                    <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 8px;">
+                        <div style="font-weight: 700; font-size: 1.5rem; color: var(--accent)">Score: ${data.score || 0}%</div>
+                        <div style="text-transform: uppercase; font-size: 0.8rem; font-weight: 700">Rec: ${data.recommendation}</div>
+                    </div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (e) {
+                resArea.innerHTML = '<p style="color:var(--danger)">Failed to reach API.</p>';
+            }
+        }
+
+        async function testOnboarding() {
+            const resArea = document.getElementById('onboarding-results');
+            resArea.innerHTML = '<p>Generating onboarding checklist...</p>';
+
+            try {
+                const response = await fetch('/api/agents/onboarding/plan/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({ employee_id: 1 })
+                });
+                const data = await response.json();
+                resArea.innerHTML = `
+                    <div style="display: grid; gap: 0.5rem; margin-top: 1rem;">
+                        ${data.plan.map(p => `
+                            <div style="background: var(--glass); padding: 1rem; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; justify-content: space-between;">
+                                <span>${p.task}</span>
+                                <span style="font-weight: 700; color: ${p.status === 'Completed' ? 'var(--accent)' : 'var(--text-dim)'}">${p.status}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (e) {
+                resArea.innerHTML = '<p style="color:var(--danger)">Failed to reach API.</p>';
+            }
+        }
+
+        async function testPayroll() {
+            const resArea = document.getElementById('payroll-results');
+            resArea.innerHTML = '<p>Calculating payroll data...</p>';
+
+            try {
+                const response = await fetch('/api/agents/payroll/pto/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({ employee_id: 1 })
+                });
+                const data = await response.json();
+                resArea.innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                        <div style="background: rgba(99, 102, 241, 0.1); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(99, 102, 241, 0.3);">
+                            <div style="font-size: 0.8rem; color: var(--text-dim)">ACCURUED HOURS</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: var(--primary)">${data.pto_accrued}h</div>
+                        </div>
+                        <div style="background: rgba(16, 185, 129, 0.1); padding: 1.5rem; border-radius: 16px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                            <div style="font-size: 0.8rem; color: var(--text-dim)">AVAILABLE BALANCE</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: var(--accent)">${data.pto_available}h</div>
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                resArea.innerHTML = '<p style="color:var(--danger)">Failed to reach API.</p>';
+            }
+        }
+
+        async function testAnalytics() {
+            const resArea = document.getElementById('analytics-results');
+            resArea.innerHTML = '<p>Aggregating company data...</p>';
+
+            try {
+                const response = await fetch('/api/agents/analytics/stats/', {
+                    method: 'GET',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+                });
+                const data = await response.json();
+                resArea.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 1.5rem;">
+                        <div style="background: var(--glass); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--glass-border);">
+                            <div style="font-size: 0.75rem; color: var(--text-dim)">HEADCOUNT</div>
+                            <div style="font-size: 1.5rem; font-weight: 800;">${data.headcount}</div>
+                        </div>
+                        <div style="background: var(--glass); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--glass-border);">
+                            <div style="font-size: 0.75rem; color: var(--text-dim)">AVG SALARY</div>
+                            <div style="font-size: 1.5rem; font-weight: 800;">$${data.avg_salary.toLocaleString()}</div>
+                        </div>
+                        <div style="background: var(--glass); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--glass-border);">
+                            <div style="font-size: 0.75rem; color: var(--text-dim)">ENGAGEMENT</div>
+                            <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent)">${data.engagement_score}/5.0</div>
+                        </div>
+                        <div style="background: var(--glass); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--glass-border);">
+                            <div style="font-size: 0.75rem; color: var(--text-dim)">OPEN ROLES</div>
+                            <div style="font-size: 1.5rem; font-weight: 800;">${data.open_roles}</div>
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                resArea.innerHTML = '<p style="color:var(--danger)">Failed to reach API.</p>';
+            }
+        }
+
+        async function ingestKnowledge() {
+            const title = document.getElementById('kb-title').value;
+            const content = document.getElementById('kb-content').value;
+            const status = document.getElementById('ingest-status');
+
+            if (!title || !content) { alert("Title and Content are required"); return; }
+
+            status.innerHTML = '<p>Ingesting knowledge...</p>';
+            try {
+                const response = await fetch('/api/agents/knowledge/ingest/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({ title, content })
+                });
+                const data = await response.json();
+                status.innerHTML = `<p style="color: var(--accent)">✅ Successfully added: ${data.title}</p>`;
+                document.getElementById('kb-title').value = '';
+                document.getElementById('kb-content').value = '';
+            } catch (e) {
+                status.innerHTML = '<p style="color:var(--danger)">Ingestion failed.</p>';
+            }
+        }
+
+        function handleKB(event, action) {
+            if (event.key === "Enter") {
+                if (action === 'search') sendMessage('knowledge');
+                else if (action === 'orchestrator') sendMessage('orchestrator');
+            }
+        }
+
+        async function triggerWorkflow() {
+            const url = document.getElementById('webhook-url').value;
+            const status = document.getElementById('workflow-status');
+            if (!url) { alert("Please enter a webhook URL"); return; }
+
+            status.innerHTML = '<p>Triggering workflow via background task...</p>';
+
+            try {
+                const response = await fetch('/api/agents/workflow/trigger/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({
+                        webhook_url: url,
+                        data: { event: "playground_test", tenant: "{{ tenant.name }}" }
+                    })
+                });
+                const data = await response.json();
+                status.innerHTML = `<p style="color: var(--accent)">✅ ${data.message}</p>`;
+            } catch (e) {
+                status.innerHTML = '<p style="color:var(--danger)">Failed to trigger.</p>';
+            }
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+
+</html>

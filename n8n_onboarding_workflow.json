@@ -1,0 +1,98 @@
+{
+    "name": "Automated Onboarding Pipeline",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "new-hire",
+                "options": {}
+            },
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "requestMethod": "POST",
+                "url": "http://host.docker.internal:8000/api/agents/orchestrator/run/",
+                "options": {},
+                "bodyParametersUi": {
+                    "parameter": [
+                        {
+                            "name": "query",
+                            "value": "={{ 'Generate a 30-day onboarding plan for ' + $json.body.name + ' who is starting as ' + $json.body.role + '. Include compliance checks.' }}"
+                        }
+                    ]
+                },
+                "headerParametersUi": {
+                    "parameter": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer YOUR_API_TOKEN_HERE"
+                        }
+                    ]
+                }
+            },
+            "name": "Orchestrator Agent",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                450,
+                300
+            ],
+            "notes": "Calls the AI Orchestrator running in Django"
+        },
+        {
+            "parameters": {
+                "channel": "general",
+                "text": "={{ '🚀 *New Hire Alert*\n\nWelcome ' + $node[\"Webhook\"].json.body.name + '!\n\n📋 *Generated 30-Day Plan:*\n' + $json.result.content }}",
+                "otherOptions": {}
+            },
+            "name": "Slack Notification",
+            "type": "n8n-nodes-base.slack",
+            "typeVersion": 1,
+            "position": [
+                650,
+                300
+            ],
+            "credentials": {
+                "slackApi": {
+                    "id": "YOUR_CREDENTIAL_ID",
+                    "name": "Slack account"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Orchestrator Agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Orchestrator Agent": {
+            "main": [
+                [
+                    {
+                        "node": "Slack Notification",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
